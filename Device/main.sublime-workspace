@@ -1,0 +1,207 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+	],
+	"build_system": "",
+	"build_system_choices":
+	[
+	],
+	"build_varint": "",
+	"command_palette":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+			[
+				"virt",
+				"Build With: Python + Virtualenv"
+			],
+			[
+				"virtu",
+				"Build With: Python + Virtualenv"
+			],
+			[
+				"pac",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"Package",
+				"Install Package Control"
+			]
+		],
+		"width": 0.0
+	},
+	"console":
+	{
+		"height": 154.0,
+		"history":
+		[
+		]
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Esami/Z85rot/out.txt",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Esami/Z85rot/2x2red_mir.ppm",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Esami/Z85rot/2x2.txt",
+		"/C/Users/Leonardo/Desktop/test.py",
+		"/C/Users/Leonardo/AppData/Roaming/Sublime Text/Packages/Virtualenv/README.md",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Esami/Z85rot/rana.txt",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Esami/Z85rot/2x2red.ppm",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Esami/09 - SnappyDecoding/lipsum.txt",
+		"/C/Users/Leonardo/Documents/Condomini/LETTURE CONDOMINI/Battisti 58/VIA BATTISTI 58 MODENA_CONSUMI_AL_23_05_2022.xml",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/YUV4MPEG2/720p_stockholm_ter.y4m",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/BitTorrent/KickAss.torrent",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Packbits/compress1_ext.bin",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/PAM/test.pam",
+		"/C/Users/Leonardo/Downloads/KickAss.torrent",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/BitTorrent/test01.torrent",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/PAM3/laptop - Copia.pam",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/PAM3/laptop.pam",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Packbits/o.packbits",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Packbits/compressme3.txt",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Packbits/compressed3.bin",
+		"/C/Users/Leonardo/Documents/Universita/MDP/Lab/Packbits/compressed1.bin"
+	],
+	"find":
+	{
+		"height": 31.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+		],
+		"reverse": false,
+		"scrollbar_highlights": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"use_gitignore": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"sheets":
+			[
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 31.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"pinned_build_system": "Packages/Virtualenv/Python + Virtualenv.sublime-build",
+	"project": "main.sublime-project",
+	"replace":
+	{
+		"height": 58.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_symbol":
+	{
+		"height": 0.0,
+		"last_filter": "",
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"selected_group": 0,
+	"settings":
+	{
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 150.0,
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
+}
