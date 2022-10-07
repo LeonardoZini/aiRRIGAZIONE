@@ -18,6 +18,7 @@ def main_core():
 	client.on_connect=on_connect
 	client.on_message=on_message
 
+	#Il quarto topic era perchè altrimenti i client si rompono, da fixare :)
 	client.will_set("modena/dead/nowcasting/kjhgf/")
 	client.connect("localhost", 1883, 60)
 	
