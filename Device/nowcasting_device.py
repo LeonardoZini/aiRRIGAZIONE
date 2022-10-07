@@ -22,6 +22,7 @@ def main_core():
 	client.will_set("modena/dead/nowcasting/kjhgf/")
 	client.connect("localhost", 1883, 60)
 	
+	#5pippo
 
 	print("Eccallà 1")
 	while True:
