@@ -7,6 +7,13 @@ import functools
 import json
 import sys
 
+class NowCaster():
+
+    def __init__(self):
+        #Assumiamo che di default sia funzionante e che ci sia il sole (lvl=0)
+        self.status=True
+        self.lvl=0
+
 
 class Device:
     
@@ -33,6 +40,7 @@ class MyDevice(Device):
     def __init__(self,city="",zone="", name="", status=False):
         super().__init__(city,zone,name,status)
         self._wait=False
+        self._nowcaster=NowCaster()
 
     def change_wait(self, wait):
         self._wait=wait
@@ -73,8 +81,8 @@ class MQTTClient(mqtt.Client):
         topic = str(msg.topic).split('/')
 
         if topic[1] == 'irrigaz':
-            self.logger.info("Irrigazione statement")
-            dev_tmp=Device('modena',topic[2],topic[3])
+            self.logger.info(f"watering statement from {topic[2]}/{topic[3]}")
+            dev_tmp=Device(self._my_dev._city,topic[2],topic[3])
             try:
                 indx = self._client_list.index(dev_tmp)
                 
@@ -96,27 +104,37 @@ class MQTTClient(mqtt.Client):
                 pass
 
             
-
         elif topic[1] == 'nowcasting':
-            self.logger.info("Nowcasting Statement")
-            lvl = topic[2]
-            self.logger.info(lvl + " Sunny") if lvl=='0' else self.logger.info(lvl + " Rain")
+            self.logger.info(f"nowcasting statement (0 sun, 1 rain, dead :( ): {topic[2]}")
+            if topic[2] != 'dead':
+                lvl = topic[2]
+                self._my_dev._nowcaster.lvl=int(lvl)
+                if self._my_dev._nowcaster.status == False: self._my_dev._nowcaster.status=True 
+            else:
+                self._my_dev._nowcaster.status=False
+                #Non viene notificato quando torna online, ma viene rilevato e funziona
+                self.logger.warning("nowcasting device is offline")
 
         elif topic[1] == 'add':
             
             dev_tmp=Device(topic[0],topic[2],topic[3])
-            if dev_tmp not in self._client_list:
-                self.logger.info('New Device')
+            if dev_tmp not in self._client_list:                
                 self._client_list.append(dev_tmp)
-                self.logger.info(dev_tmp)
+                self.logger.info(f"new device-> {dev_tmp._zone}/{dev_tmp._name}; status->{dev_tmp._status}")
 
         elif topic[1] == 'dead':
-            self.logger.info("Will Statement")
-            self.logger.info(self._client_list)
+            
+            #Problema: qui lo stato di tmp è per forza falso, come faccio a controllare se invece era true?
+            #Risolto, messa una pezza 
             tmp = Device(topic[0],topic[2],topic[3])
             if tmp in self._client_list:
+                #Devo fare cosi per recuperare l'oggetto nella lista vero
+                if self._client_list[self._client_list.index(tmp)]._status == True:
+                    self._queue-=1
+                    self.check_if_can_go()
                 self._client_list.remove(tmp)
-            self.logger.info(self._client_list)
+
+            self.logger.info(f"will statement, {tmp._zone}/{tmp._name} is dead")
 
         elif topic[1]=='check':
             client.publish("{}/add/{}/{}".format(
@@ -126,24 +144,24 @@ class MQTTClient(mqtt.Client):
 
 def irrigaz(dev:MyDevice, client:MQTTClient, time_to_wait:int):
     logger = logging.getLogger("watering")
-    logger.info("Start routine..")
-    logger.info("Can We Go? "+str(not dev._wait))
+    logger.info("start routine..")
+    logger.info("can go? "+str(not dev._wait))
     while dev._wait==True:
-        print("Must wait...")
+        logger.info("must wait...")
         time.sleep(time_to_wait)
+    logger.info("can go now!!")
+    #Manca gestione degli errori 
 
-    #MANCA DA TROVARE I NODI GIà IN RETE!
-    #Manca gestione degli errori
-    logger.info("Inizio irrigaz..")
+    logger.info("start watering procedure..")
     dev.change_status(True)
     client.publish("{}/irrigaz/{}/{}/start".format(
             dev._city, dev._zone, dev._name))
     time.sleep(30)
-    logger.info("Fine irrigaz..")
+    logger.info("watering end..")
     dev.change_status(False)
     client.publish("{}/irrigaz/{}/{}/stop".format(
             dev._city, dev._zone, dev._name))
-    logging.info("Publish message sent..")
+    logger.info("publish message sent..")
 
 def pending():
     while True:
@@ -152,9 +170,6 @@ def pending():
 
 def main_core(argv):
 
-    #Da inserire configurazione da File!!
-
-
     f = open(argv)
     config = json.load(f)
 
@@ -162,25 +177,16 @@ def main_core(argv):
     this_device = MyDevice(config['City'],config['Park'],config['Code'])
     client = MQTTClient(this_device)
 
-    '''
-    client.will_set("{}/dead/{}/{}".format(
-        this_device._city,
-     this_device._zone, 
-     this_device._name))
-    '''
-
     client.will_set(this_device._city+"/dead/"+this_device._zone+"/"+this_device._name)
     client.connect("localhost", 1883, 60)
 
     logger = logging.getLogger()
 
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
-
+    logging.info(f"device info: {this_device}")
     logging.info("start scheduler..")
     schedule.every(config['RoutinePeriod']).minutes.do(functools.partial(irrigaz,this_device, client, config['TimeToWait']))
-
-
 
 
     logging.info("start client loop_forever")
@@ -198,6 +204,6 @@ if __name__ == '__main__':
         argv=sys.argv[1]
         print()
     else:
-        argv='config2.json'
+        argv='config1.json'
 
     main_core(argv)
