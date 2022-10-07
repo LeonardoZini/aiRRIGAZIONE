@@ -45,6 +45,7 @@ class MQTTClient(mqtt.Client):
         super().__init__()
         self._my_dev = dev
         self._queue=0
+        self.logger=logging.getLogger("mqtt")
 
     def check_if_can_go(self):
         if(self._queue==0):
@@ -53,8 +54,8 @@ class MQTTClient(mqtt.Client):
             self._my_dev.change_wait(True)
 
 
-    def on_connect(self,client, userdata, flags, rc):
-        print("Connected with result code " + str(rc))
+    def on_connect(self, client, userdata, flags, rc):
+        self.logger.info("Connected with result code " + str(rc))
 
         
         #AA111 da sostituire con conf filee
@@ -72,7 +73,7 @@ class MQTTClient(mqtt.Client):
         topic = str(msg.topic).split('/')
 
         if topic[1] == 'irrigaz':
-            print("Irrigazione statement")
+            self.logger.info("Irrigazione statement")
             dev_tmp=Device('modena',topic[2],topic[3])
             try:
                 indx = self._client_list.index(dev_tmp)
@@ -88,7 +89,7 @@ class MQTTClient(mqtt.Client):
                     self._queue-=1
                     self.check_if_can_go()
 
-                print(self._client_list[indx])            
+                self.logger.info(self._client_list[indx])            
 
             except ValueError:
                 #Device non registrato nella lista
@@ -97,23 +98,25 @@ class MQTTClient(mqtt.Client):
             
 
         elif topic[1] == 'nowcasting':
-            print("Nowcasting Statement")
+            self.logger.info("Nowcasting Statement")
+            lvl = topic[2]
+            self.logger.info(lvl + " Sunny") if lvl=='0' else self.logger.info(lvl + " Rain")
 
         elif topic[1] == 'add':
             
             dev_tmp=Device(topic[0],topic[2],topic[3])
             if dev_tmp not in self._client_list:
-                print('New Device')
+                self.logger.info('New Device')
                 self._client_list.append(dev_tmp)
-                print(dev_tmp)
+                self.logger.info(dev_tmp)
 
         elif topic[1] == 'dead':
-            print("Will Statement")
-            print(self._client_list)
+            self.logger.info("Will Statement")
+            self.logger.info(self._client_list)
             tmp = Device(topic[0],topic[2],topic[3])
             if tmp in self._client_list:
                 self._client_list.remove(tmp)
-            print(self._client_list)
+            self.logger.info(self._client_list)
 
         elif topic[1]=='check':
             client.publish("{}/add/{}/{}".format(
@@ -122,24 +125,25 @@ class MQTTClient(mqtt.Client):
 
 
 def irrigaz(dev:MyDevice, client:MQTTClient, time_to_wait:int):
-    print("Start routine..")
-    print("Can We Go? "+str(not dev._wait))
+    logger = logging.getLogger("watering")
+    logger.info("Start routine..")
+    logger.info("Can We Go? "+str(not dev._wait))
     while dev._wait==True:
         print("Must wait...")
         time.sleep(time_to_wait)
 
     #MANCA DA TROVARE I NODI GIà IN RETE!
     #Manca gestione degli errori
-    print("Inizio irrigaz..")
+    logger.info("Inizio irrigaz..")
     dev.change_status(True)
     client.publish("{}/irrigaz/{}/{}/start".format(
             dev._city, dev._zone, dev._name))
     time.sleep(30)
-    print("Fine irrigaz..")
+    logger.info("Fine irrigaz..")
     dev.change_status(False)
     client.publish("{}/irrigaz/{}/{}/stop".format(
             dev._city, dev._zone, dev._name))
-    print("Publish message sent..")
+    logging.info("Publish message sent..")
 
 def pending():
     while True:
@@ -168,11 +172,18 @@ def main_core(argv):
     client.will_set(this_device._city+"/dead/"+this_device._zone+"/"+this_device._name)
     client.connect("localhost", 1883, 60)
 
-    print("start scheduler..")
+    logger = logging.getLogger()
+
+    logger.setLevel(logging.DEBUG)
+
+
+    logging.info("start scheduler..")
     schedule.every(config['RoutinePeriod']).minutes.do(functools.partial(irrigaz,this_device, client, config['TimeToWait']))
 
 
-    print("start client loop_forever")
+
+
+    logging.info("start client loop_forever")
     t_client =threading.Thread(target=client.loop_forever)
     t_client.start()
 
