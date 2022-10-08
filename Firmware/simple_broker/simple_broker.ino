@@ -7,8 +7,6 @@
 #include <ESP8266WiFi.h>
 #include "uMQTTBroker.h"
 
-uMQTTBroker myBroker;
-
 /*
  * Your WiFi config here
  */
@@ -18,11 +16,57 @@ bool wiFiAP = true;      // Do yo want the ESP as AP?
 uint16_t portNumber = 1883;
 
 /*
+ * Custom broker class with overwritten callback functions
+ */
+class myMQTTBroker: public uMQTTBroker
+{
+public:
+    virtual bool onConnect(IPAddress addr, uint16_t client_count) {
+      Serial.println(addr.toString()+" connected");
+      return true;
+    }
+
+    virtual void onDisconnect(IPAddress addr, String client_id) {
+      Serial.println(addr.toString()+" ("+client_id+") disconnected");
+    }
+
+    virtual bool onAuth(String username, String password, String client_id) {
+      Serial.println("Username/Password/ClientId: "+username+"/"+password+"/"+client_id);
+      return true;
+    }
+    
+    virtual void onData(String topic, const char *data, uint32_t length) {
+      char data_str[length+1];
+      os_memcpy(data_str, data, length);
+      data_str[length] = '\0';
+      
+      Serial.println("received topic '"+topic+"' with data '"+(String)data_str+"'");
+      //printClients();
+    }
+
+    // Sample for the usage of the client info methods
+
+    virtual void printClients() {
+      for (int i = 0; i < getClientCount(); i++) {
+        IPAddress addr;
+        String client_id;
+         
+        getClientAddr(i, addr);
+        getClientId(i, client_id);
+        Serial.println("Client "+client_id+" on addr: "+addr.toString());
+      }
+    }
+};
+
+myMQTTBroker myBroker;
+
+/*
  * WiFi init stuff
  */
 void startWiFiClient()
 {
   Serial.println("Connecting to "+(String)ssid);
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, pass);
   
   while (WiFi.status() != WL_CONNECTED) {
@@ -37,8 +81,9 @@ void startWiFiClient()
 
 void startWiFiAP()
 {
-  bool res = WiFi.softAP(ssid, pass);
-  Serial.println("AP started at " +(String)ssid + " : " + res);
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(ssid, pass);
+  Serial.println("AP started");
   Serial.println("IP address: " + WiFi.softAPIP().toString());
 }
 
@@ -48,25 +93,31 @@ void setup()
   Serial.println();
   Serial.println();
 
-  if(wiFiAP)
-  {
-    //start the ESP as AP
+  // Start WiFi
+  if (wiFiAP)
     startWiFiAP();
-  }
-  else  
-  {
-    // Connect to a WiFi network
+  else
     startWiFiClient();
-  }
 
   // Start the broker
   Serial.println("Starting MQTT broker");
-  myBroker = uMQTTBroker(portNumber);
   myBroker.init();
+
+/*
+ * Subscribe to anything
+ */
+  myBroker.subscribe("#");
 }
 
+int counter = 0;
+
 void loop()
-{   
-  // do anything here
-  delay(1000);
+{
+/*
+ * Publish the counter value as String
+ */
+  //myBroker.publish("broker/counter", (String)counter++);
+   
+  // wait a second
+  //delay(1000);
 }
