@@ -14,6 +14,7 @@ def on_message(client, userdata, msg):
 
 
 def main_core():
+	print("starting mqtt client nowcaster..")
 	client = mqtt.Client()
 	client.on_connect=on_connect
 	client.on_message=on_message
