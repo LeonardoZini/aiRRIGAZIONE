@@ -10,7 +10,7 @@ Students: Leonardo Zini, Pietro Martinello and Giovanni Casari
   #### \<city\>/dead/\<park\>/\<zone\><br>
   Topic used when the device turns off
   ### For notify others that a device start or stop to irrigating 
-  #### \<city\>/irrigaz/\<park>/\<zone\>\<value\><br>
+  #### \<city\>/irrigaz/\<park>/\<zone\>/\<value\><br>
   The value must be 'start' or 'stop' to notify the change of status, other value will not be considered
   ### For a new device that turn on that need to discover other online devices
   #### \<city>/check/\<park>/\<zone\><br>
