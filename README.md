@@ -27,5 +27,6 @@ Students: Leonardo Zini, Pietro Martinello and Giovanni Casari
 	"Park": string,       #Park where the device is locater<br>
 	"Code": string,       #Code of the device, must be pseudorandom<br>
 	"RoutinePeriod": int, #The interval of the irrigation routine <br>
-	"TimeToWait": int     #Time to wait if there are no conditions for watering <br>
+	"TimeToWait": int,     #Time to wait if there are no conditions for watering <br>
+	"IpBroker" : string	#Broker's Ip of the net
 }<br>
