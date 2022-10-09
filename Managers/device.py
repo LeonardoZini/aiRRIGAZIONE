@@ -172,7 +172,9 @@ def irrigaz(dev:MyDevice, client:MQTTClient, time_to_wait:int):
     logger.info("start watering procedure..")
     dev.change_status(True)
     client.publish(dev.irrigazStatement("start"))
-    time.sleep(30)
+
+    time.sleep(30)  # Qua ci va la funzione che gestisce l'HW per l'irrigazione (Pie)
+
     logger.info("watering end..")
     dev.change_status(False)
     client.publish(dev.irrigazStatement("stop"))
@@ -193,7 +195,7 @@ def main_core(argv):
     client = MQTTClient(this_device)
 
     client.will_set(this_device._city+"/dead/"+this_device._zone+"/"+this_device._name)
-    client.connect("localhost", 1883, 60)
+    client.connect(config["IpBroker"], 1883, 60)
 
     logger = logging.getLogger()
 
@@ -219,6 +221,7 @@ if __name__ == '__main__':
         argv=sys.argv[1]
         print()
     else:
-        argv='config1.json'
+        argv='Node_configurations/config1.json'
 
     main_core(argv)
+    
