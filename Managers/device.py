@@ -6,6 +6,7 @@ import schedule
 import functools
 import json
 import sys
+import os
 
 #Classe dedicata al nowcaster, struttura che raccoglie i dati che comunica il nowcaster
 class NowCaster():
@@ -221,7 +222,7 @@ if __name__ == '__main__':
         argv=sys.argv[1]
         print()
     else:
-        argv='Node_configurations/config1.json'
+        argv= os.path.join("Managers","irrigation_configs", "config1.json")
 
     main_core(argv)
     
