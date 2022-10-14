@@ -12,9 +12,9 @@ import os
 class NowCaster():
 
     def __init__(self):
-        #Assumiamo che di default sia funzionante e che ci sia il sole (lvl=0)
+        #Assumiamo che di default sia funzionante e che ci sia il sole
         self.status = True
-        self.lvl = 0
+        self.sun = True
 
 
 #Struttura che contiene i dati degli altri dipositivi della rete
@@ -55,7 +55,7 @@ class MyDevice(Device):
         return f"{self._city}/add/{self._zone}/{self._name}"
 
     def irrigazStatement(self, status):
-        return f"{self._city}/irrigaz/{self._zone}/{self._name}/{value}"
+        return f"{self._city}/irrigaz/{self._zone}/{self._name}/{status}"
 
 
 class MQTTClient(mqtt.Client):
@@ -126,8 +126,11 @@ class MQTTClient(mqtt.Client):
             self.logger.info(f"nowcasting statement (0 sun, 1 rain, dead :( ): {topic[2]}")
             if topic[2] != 'dead':
                 lvl = topic[2]
-                self._my_dev._nowcaster.lvl = int(lvl)
-                if self._my_dev._nowcaster.status == False: self._my_dev._nowcaster.status = True 
+
+                sun = int(lvl) == 0
+                self._my_dev._nowcaster.sun = sun
+                if self._my_dev._nowcaster.status == False:
+                    self._my_dev._nowcaster.status = True 
             else:
                 #Nowcaster offline
                 self._my_dev._nowcaster.status = False
@@ -204,7 +207,7 @@ def main_core(argv):
 
     logging.info(f"device info: {this_device}")
     logging.info("start scheduler..")
-    schedule.every(config['RoutinePeriod']).minutes.do(functools.partial(irrigaz,this_device, client, config['TimeToWait']))
+    #schedule.every(config['RoutinePeriod']).minutes.do(functools.partial(irrigaz,this_device, client, config['TimeToWait']))
 
 
     logging.info("start client loop_forever")
