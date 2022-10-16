@@ -13,18 +13,18 @@ class NowCaster():
 
     def __init__(self):
         #Assumiamo che di default sia funzionante e che ci sia il sole
-        self.status = True
-        self.sun = True
+        self.status = True  # Dispositivo funzionante o meno
+        self.sun = True     # Valore attuale del cielo
 
 
 #Struttura che contiene i dati degli altri dipositivi della rete
 class Device:
     
     def __init__(self,city="",zone="", name="", status=False):
-        self._city = city
-        self._zone = zone
-        self._name = name
-        self._status = status
+        self._city = city #Citta
+        self._zone = zone #Parco
+        self._name = name #Zona/ID
+        self._status = status # True se il dispositivo sta annaffiando, False altrimenti
 
     def __str__(self):
         return "Device: "+self._city+"/"+self._zone+"/"+self._name+"\tstatus: "+str(self._status)
@@ -62,19 +62,28 @@ class MQTTClient(mqtt.Client):
 
     _client_list = list()
 
-    def __init__(self,dev:MyDevice):
+    def __init__(self,dev:MyDevice, callback_irr, callback_now):
         super().__init__()
         self._my_dev = dev  #Aggiungo un my_dev per gestire e memorizzare meglio le richieste
         self._queue = 0     #Contatore che tiene in memoria quanti dispositivi stanno annaffiando o hanno fatto richiesta
+        
         self.logger = logging.getLogger("mqtt") 
+        self.logger.setLevel(logging.INFO)
+        
+        self.logger.info(f"device info: {dev}")
+        # self.logger.info("start client loop_forever")
 
+        self.callback_irr = callback_irr
+        self.callback_now = callback_now
 
     #Controllo se posso partire con l'irrigazione da questo dispositivo
     def check_if_can_go(self):
         if(self._queue == 0):
             self._my_dev.change_wait(False)
+            return False
         else:
             self._my_dev.change_wait(True)
+            return True
 
 
     def on_connect(self, client, userdata, flags, rc):
@@ -103,15 +112,31 @@ class MQTTClient(mqtt.Client):
                 indx = self._client_list.index(dev_tmp)
                 
                 if topic[4] == 'start':
-                    #Controlla che il client sia in stato False!
+
+                    '''
+                    Teniamo comunque traccia di tutti gli irrigatori della città anche se non sono del nostro parco
+                    per poter estendere la decisione tenendo conto anche degli altri parchi in un futuro
+                    '''
                     self._client_list[indx]._status = True
-                    self._queue += 1
-                    self.check_if_can_go()
+
+                    #Controlla che il client sia in stato False!
+                    if topic[2] == self._my_dev._zone and topic[3] != self._my_dev._name:
+                        # Se qualcuno inizia ad irrigare e ne avevo segnati 0 allora io non posso più
+                        if self._queue==0:
+                            self.callback_irr(False)
+
+                        self._queue += 1
+                        self.check_if_can_go()
 
                 elif topic[4] == 'stop':
                     self._client_list[indx]._status = False
-                    self._queue -= 1
-                    self.check_if_can_go()
+                    if topic[2] == self._my_dev._zone and topic[3] != self._my_dev._name:
+                        self._queue -= 1
+
+                        # Se da 1 passo a 0 allora tornano le condizioni
+                        if self._queue == 0: 
+                            self.callback_irr(True)
+                        self.check_if_can_go()
 
                 self.logger.info(self._client_list[indx])            
 
@@ -127,15 +152,31 @@ class MQTTClient(mqtt.Client):
             if topic[2] != 'dead':
                 lvl = topic[2]
 
+                # Setto il valore del cielo che ricevo nell'istanza nowcaster del mio device
                 sun = int(lvl) == 0
-                self._my_dev._nowcaster.sun = sun
+                
+                # CHIAMARE CALLBACK (SE LE CONDIZIONI CAMBIANO)
+                # sun: false self.sun:true -> false
+                # sun:true self.sun:false  -> true
+                # quindi nella callback passo come parametro il valore di sun
+                # se non erro
+
+                if sun != self._my_dev._nowcaster.sun:
+                    self.callback_now(sun)
+                    self._my_dev._nowcaster.sun = sun
+
+                
+
+                # Se ricevo una publish da parte del nowcaster ed era "morto" lo riconsidero attivo
+                # così nella parte decisionale lo torno a prendere in considerazione
                 if self._my_dev._nowcaster.status == False:
                     self._my_dev._nowcaster.status = True 
             else:
-                #Nowcaster offline
-                self._my_dev._nowcaster.status = False
-                #Non viene notificato quando torna online, ma viene rilevato e funziona
-                self.logger.warning("nowcasting device is offline")
+                self._my_dev._nowcaster.status = False # Nowcaster offline
+
+                self._my_dev.sun=True   # Se il nowcaster non va consideriamo che ci sia il sole, così nel dubbio annaffiamo
+
+                self.logger.warning("nowcasting device is offline") # Non viene notificato quando torna online, ma viene rilevato e funziona
 
         elif topic[1] == 'add':
             
@@ -153,6 +194,8 @@ class MQTTClient(mqtt.Client):
                 #Devo fare cosi per recuperare l'oggetto nella lista vero
                 if self._client_list[self._client_list.index(tmp)]._status == True:
                     self._queue-=1
+                    if self.queue == 0 : 
+                        self.callback_irr(True)
                     self.check_if_can_go()
                 self._client_list.remove(tmp)
 
@@ -162,33 +205,9 @@ class MQTTClient(mqtt.Client):
             client.publish(self._my_dev.addStatement())
 
 
-#Funzione che implementa il codice per la parte hardware dell'irrigazione
-def irrigaz(dev:MyDevice, client:MQTTClient, time_to_wait:int):
-    logger = logging.getLogger("watering")
-    logger.info("start routine..")
-    logger.info("can go? "+str(not dev._wait))
-    while dev._wait == True:
-        logger.info("must wait...")
-        time.sleep(time_to_wait)
-    logger.info("can go now!!")
-    #Manca gestione degli errori 
 
-    logger.info("start watering procedure..")
-    dev.change_status(True)
-    client.publish(dev.irrigazStatement("start"))
 
-    time.sleep(30)  # Qua ci va la funzione che gestisce l'HW per l'irrigazione (Pie)
-
-    logger.info("watering end..")
-    dev.change_status(False)
-    client.publish(dev.irrigazStatement("stop"))
-    logger.info("publish message sent..")
-
-def pending():
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
+'''
 def main_core(argv):
 
     f = open(argv)
@@ -207,25 +226,11 @@ def main_core(argv):
 
     logging.info(f"device info: {this_device}")
     logging.info("start scheduler..")
-    #schedule.every(config['RoutinePeriod']).minutes.do(functools.partial(irrigaz,this_device, client, config['TimeToWait']))
 
 
     logging.info("start client loop_forever")
     t_client =threading.Thread(target=client.loop_forever)
     t_client.start()
-
-    t_sched = threading.Thread(target=pending)
-    t_sched.start()
-    t_sched.join()
-
     t_client.join()
 
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        argv=sys.argv[1]
-        print()
-    else:
-        argv= os.path.join("Managers","irrigation_configs", "config1.json")
-
-    main_core(argv)
-    
+'''
