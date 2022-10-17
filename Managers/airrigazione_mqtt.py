@@ -9,7 +9,7 @@ class Core():
 	# Config già parsato sulla parte che mi serve! 	callback1:irrigators ; callback2:nowcasting
 	def __init__(self,callback1, callback2, config:dict):
 		'''
-		Usato per fare test
+		# Usato per fare test
 		f = open(config_f)
 		config = json.load(f)
 		'''
@@ -22,7 +22,7 @@ class Core():
 		self.logger = dv.logging.getLogger("core")
 		self.logger.setLevel(dv.logging.INFO)
 
-
+		self.mqtt_client.loop_start()
 
 	# In base al valore che mi passi faccio la richiesta mqtt
 	def set_irrigation_value(self, val:bool):

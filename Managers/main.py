@@ -1,7 +1,8 @@
 import airrigazione_mqtt as aimqtt
 import sys
 import os 
-import random 
+import random
+import time 
 
 
 def f1(b:bool):
@@ -23,9 +24,5 @@ tmp = aimqtt.Core(f1,f2,r_argv)
 val=0
 
 while True:
-    while val<20:
-        tmp.start_mqtt(t_out=3)
-        val+=1
-    val=0
-
+    time.sleep(10)
     tmp.set_irrigation_value(True)
