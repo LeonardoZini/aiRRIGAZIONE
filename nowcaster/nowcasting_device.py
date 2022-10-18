@@ -14,7 +14,7 @@ import signal
 import sys
 import _thread as thread  # using Python 3
 
-rasp_build=True
+rasp_build=True #change if you are using pc client (not raspberry)
 if(rasp_build):
 	import RPi.GPIO as GPIO
 
@@ -25,9 +25,11 @@ path_to_folder= os.path.join("/","home","pi","Desktop","airrigazione")
 
 class RaspConfig:
 	led_pin = 15
-	source_switch_pin = 11
+	source_switch_pin = 11 #if input must come from camera or from dataset
+	automatic_switch_pin = 16	#if this node must process picture in automatic (timer) or mannually
 	picture_button_pin = 13
-	manual_camera = True
+	using_camera = True
+	automatic_client = True
 
 	#to be filled in runtime
 	camera = None 
@@ -41,40 +43,53 @@ class RaspConfig:
 
 def setup_raspi():
 	RaspConfig.camera = cv2.VideoCapture(0)
-	thread.start_new_thread(start_camera_stream, ())
 
 	GPIO.setmode(GPIO.BOARD)
 	GPIO.setup(RaspConfig.led_pin ,GPIO.OUT)
-	GPIO.setup(RaspConfig.picture_button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+	GPIO.setup(RaspConfig.picture_button_pin, GPIO.IN)
 	GPIO.setup(RaspConfig.source_switch_pin, GPIO.IN)
+	GPIO.setup(RaspConfig.automatic_switch_pin, GPIO.IN)
 
-	GPIO.add_event_detect(RaspConfig.picture_button_pin, GPIO.FALLING, callback=camera_button_callback, bouncetime=200)
-	GPIO.add_event_detect(RaspConfig.source_switch_pin, GPIO.BOTH, callback=switch_callback, bouncetime=500)
+	GPIO.add_event_detect(RaspConfig.picture_button_pin, GPIO.FALLING, callback=camera_button_callback, bouncetime=500)
+	GPIO.add_event_detect(RaspConfig.source_switch_pin, GPIO.BOTH, callback=source_switch_callback, bouncetime=500)
+	GPIO.add_event_detect(RaspConfig.automatic_switch_pin, GPIO.BOTH, callback=automatic_switch_callback, bouncetime=500)
 
-	switch_callback(None)
+	source_switch_callback(None)
+	automatic_switch_callback(None)
 	return
 
 def start_camera_stream(): #different thread just to extrcat frames.
 	while True:
-		ret, frame = RaspConfig.camera.read()
-		if(ret):
-			RaspConfig.last_frame = frame
+		if(RaspConfig.camera != None):
+			ret, frame = RaspConfig.camera.read()
+			if(ret):
+				RaspConfig.last_frame = frame
 
-def switch_callback(channel):
+def source_switch_callback(channel):
 	pin_value = GPIO.input(RaspConfig.source_switch_pin)
-	if pin_value and not RaspConfig.manual_camera:
-		print("-----Switched to manual-----")
-		RaspConfig.manual_camera = True
+	if pin_value and not RaspConfig.using_camera:
+		print("-----Switched to webcam mode-----")
+		RaspConfig.using_camera = True
 
-	if not pin_value and RaspConfig.manual_camera:
+	if not pin_value and RaspConfig.using_camera:
+		print("-----Switched to preloaded-picture mode-----")
+		RaspConfig.using_camera = False
+	return
+
+
+def automatic_switch_callback(channel):
+	pin_value = GPIO.input(RaspConfig.automatic_switch_pin)
+	if pin_value and not RaspConfig.automatic_client:
 		print("-----Switched to automatic-----")
-		RaspConfig.manual_camera = False
-		automatic_client()
+		RaspConfig.automatic_client = True
 
+	if not pin_value and RaspConfig.automatic_client:
+		print("-----Switched to manual-----")
+		RaspConfig.automatic_client = False
 	return
 
 def camera_button_callback(channel):
-	if not RaspConfig.manual_camera:
+	if RaspConfig.automatic_client:
 		return
 	else:
 		print("camera Button pressed!")
@@ -83,8 +98,7 @@ def camera_button_callback(channel):
 
 #read the switch and decide where to take from the picture (webcam/dataset).
 def get_picture():
-	if RaspConfig.manual_camera:
-
+	if RaspConfig.using_camera:
 		#grabbed, pic = RaspConfig.camera.read()
 		pic = RaspConfig.last_frame
 		save_last_picture(pic)
@@ -143,9 +157,8 @@ def elaborate_weather():
 	return
 
 def automatic_client():
-	if(RaspConfig.manual_camera):
-		return
-	elaborate_weather()
+	if(RaspConfig.automatic_client and RaspConfig.camera != None):
+		elaborate_weather()
 	threading.Timer(RaspConfig.timer, automatic_client).start()
 
 
@@ -187,7 +200,14 @@ def main_core(argv):
 	RaspConfig.client = client
 	client.on_connect=on_connect
 	client.will_set("{}/nowcasting/dead/".format(RaspConfig.city))
+	
+
+	if rasp_build:
+		thread.start_new_thread(start_camera_stream, ())
+
+	automatic_client()
 	set_connection()
+
 	signal.signal(signal.SIGINT, signal_handler)
 	signal.pause()
 	
@@ -204,6 +224,7 @@ def set_connection():
 
 	if(rasp_build):
 		setup_raspi()
+
 
 	return
 

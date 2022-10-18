@@ -2,7 +2,8 @@ import airrigazione_mqtt as aimqtt
 import sys
 import os 
 import random
-import time 
+import time
+import json
 
 
 def f1(b:bool):
@@ -14,15 +15,12 @@ def f2(b:bool):
 
 
 if len(sys.argv) > 1:
-    argv=os.path.join("Managers","irrigation_configs", sys.argv[1])
+    argv=os.path.join(".","irrigaz","irrigation_configs", sys.argv[1])
 else:
-    argv= os.path.join("Managers","irrigation_configs", "config1.json")
+    argv= os.path.join(".","irrigaz","irrigation_configs", "config1.json")
 
-r_argv="..\\" + argv
-print(r_argv)
-tmp = aimqtt.Core(f1,f2,r_argv)
+print(argv)
+f = open(argv)
+config = json.load(f)
+tmp = aimqtt.Core(f1,f2,config)
 val=0
-
-while True:
-    time.sleep(10)
-    tmp.set_irrigation_value(True)

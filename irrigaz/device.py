@@ -104,6 +104,10 @@ class MQTTClient(mqtt.Client):
     def on_message(self,client, userdata, msg):
         topic = str(msg.topic).split('/')
 
+        #avoiding self-messages
+        if topic[1] != "nowcasting" and topic[3] == self._my_dev._name:
+            return
+
         #Controllo il secondo campo del topic, che è quello che specifica il comando
         if topic[1] == 'irrigaz':
             self.logger.info(f"watering statement from {topic[2]}/{topic[3]}")
