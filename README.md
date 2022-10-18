@@ -18,15 +18,22 @@ Students: Leonardo Zini, Pietro Martinello and Giovanni Casari
   ### For nowcasting mechanism, when the nowcasting device wants to comunicate
   #### \<city>/nowcasting/\<value\><br>
   The value must be '0' for sunny values, '1' for rainy values and 'dead' when the device turns offline
+
+  #### \<city>/nowcasting/info<br>
+  When this topic arrives, in the payload there are the weather forecast of the next 24 hours
   
   
 ## Config file format
 
 {<br>
-	"City": string,       #City where the device is located <br>
-	"Park": string,       #Park where the device is locater<br>
-	"Code": string,       #Code of the device, must be pseudorandom<br>
-	"RoutinePeriod": int, #The interval of the irrigation routine <br>
-	"TimeToWait": int,     #Time to wait if there are no conditions for watering <br>
-	"IpBroker" : string	#Broker's Ip of the net
+	"City": string,       # City where the device is located <br>
+	"Park": string,       # Park where the device is locater<br>
+	"Code": string,       # Code of the device, must be pseudorandom<br>
+	"RoutinePeriod": int, # The interval of the irrigation routine <br>
+	"TimeToWait": int,     # Time to wait if there are no conditions for watering <br>
+	"IpBroker" : string,	# Broker's Ip of the net
+  "coordinates": {      # The coordinates of the device
+    "lat": float,
+    "lon": float
+  }
 }<br>

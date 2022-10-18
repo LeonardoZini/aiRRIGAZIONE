@@ -14,6 +14,7 @@ class Core():
 		config = json.load(f)
 		'''
 		self.my_dev = dv.MyDevice(config["City"], config["Park"], config["Code"]) 
+		self.my_dev.set_coordinates(config["coordinates"]["lat"], config["coordinates"]["lon"])
 		# Configurazione mqtt client
 		self.mqtt_client = dv.MQTTClient(self.my_dev, callback1, callback2)
 		self.mqtt_client.will_set(self.my_dev._city+"/dead/"+self.my_dev._zone+"/"+self.my_dev._name)
