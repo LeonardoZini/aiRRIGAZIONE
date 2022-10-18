@@ -18,6 +18,11 @@ rasp_build=True
 if(rasp_build):
 	import RPi.GPIO as GPIO
 
+path_to_folder= os.path.join("/","home","pi","Desktop","airrigazione")
+#path_to_folder= os.path.join(".") #just for testing
+
+
+
 class RaspConfig:
 	led_pin = 15
 	source_switch_pin = 11
@@ -29,6 +34,7 @@ class RaspConfig:
 	client = None
 	city = None
 	model = None
+	ipBroker = None
 	last_frame = None
 	timer = -1
 
@@ -89,14 +95,14 @@ def get_picture():
 	return pic
 
 def save_last_picture(picture):
-	path = "last_image.jpg"
+	path = os.path.join(path_to_folder,"last_image.jpg")
 	if os.path.exists(path):
 		os.remove(path)
 	writingRes = cv2.imwrite(path, picture)
 	return
 
 def get_picture_from_dataset():
-	parentDir = "sky_pictures"
+	parentDir = os.path.join(path_to_folder,"sky_pictures")
 	_, dirs, _ = next(os.walk(parentDir))
 	category = os.path.join(parentDir, random.choice(dirs))
 	pic = os.path.join(category,random.choice(os.listdir(category)))
@@ -162,7 +168,7 @@ def main_core(argv):
 	torch.set_num_threads(3) #setting 3 threads (out of 4)
 
 	print("loading model..")
-	model = torch.load("modello")
+	model = torch.load(os.path.join(path_to_folder,"modello"))
 	model.eval()
 	RaspConfig.model = model
 	print("model loaded.")
@@ -174,28 +180,40 @@ def main_core(argv):
 
 	RaspConfig.city = config['City']
 	RaspConfig.timer = config['RoutinePeriod'] #in seconds
+	RaspConfig.ipBroker = config["IpBroker"]
 	print("timer: ", RaspConfig.timer)
 
 	client = mqtt.Client()
 	RaspConfig.client = client
 	client.on_connect=on_connect
 	client.will_set("{}/nowcasting/dead/".format(RaspConfig.city))
+	set_connection()
+	signal.signal(signal.SIGINT, signal_handler)
+	signal.pause()
+	
 
-	print("trying to connect to ip ",config["IpBroker"])
-	client.connect(config["IpBroker"], 1883, 60)
-	client.loop_start() #start the loop
+def set_connection():
+	try:
+		client = RaspConfig.client
+		client.connect(RaspConfig.ipBroker, 1883, 60)
+		client.loop_start() #start the loop
+	except:
+		print("Impossible to start a connection to ", RaspConfig.ipBroker,"; retrying in 5 seconds..")
+		threading.Timer(5, set_connection).start()
+		return
 
 	if(rasp_build):
 		setup_raspi()
 
-	signal.signal(signal.SIGINT, signal_handler)
-	signal.pause()
+	return
+
+
 
 if __name__ == '__main__':
 	if len(sys.argv) > 1:
 		argv=sys.argv[1]
 		print()
 	else:
-		argv= "node_config.json"
+		argv= os.path.join(path_to_folder,"node_config.json")
 	
 	main_core(argv)

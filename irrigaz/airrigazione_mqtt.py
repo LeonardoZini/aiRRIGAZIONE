@@ -31,12 +31,6 @@ class Core():
 		else:
 			self.mqtt_client.publish(self.my_dev.irrigazStatement("stop"))
 
-	def start_mqtt(self, t_out=3, forever=False):
-		if forever: 
-			self.mqtt_client.loop_forever()
-		else:
-			self.mqtt_client.loop(timeout=t_out)
-
 
 
         
