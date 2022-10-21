@@ -31,9 +31,9 @@ Students: Leonardo Zini, Pietro Martinello and Giovanni Casari
 	"Code": string,       # Code of the device, must be pseudorandom<br>
 	"RoutinePeriod": int, # The interval of the irrigation routine <br>
 	"TimeToWait": int,     # Time to wait if there are no conditions for watering <br>
-	"IpBroker" : string,	# Broker's Ip of the net
-  "coordinates": {      # The coordinates of the device
-    "lat": float,
-    "lon": float
-  }
+	"IpBroker" : string,	# Broker's Ip of the net<br>
+ 	 "coordinates": {      # The coordinates of the device<br>
+   	 "lat": float,<br>
+   	 "lon": float<br>
+  	}<br>
 }<br>
