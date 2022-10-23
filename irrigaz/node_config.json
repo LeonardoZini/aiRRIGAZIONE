@@ -1,0 +1,9 @@
+{
+	"City":"modena",
+	"Park":"viadavia",
+	"Code":"AA111",
+	"RoutinePeriod":5,
+	"TimeToWait":15,
+	"IpBroker":"localhost",
+	"IrrigationTime":5
+}

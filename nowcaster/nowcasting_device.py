@@ -22,16 +22,38 @@ path_to_folder= os.path.join("/","home","pi","Desktop","airrigazione")
 #path_to_folder= os.path.join(".") #just for testing
 
 
+class CustomPushButton:
+	def __init__(self, button_pin:int, led_pin:int, startValue=False):
+		"""All pins MUST be defined as GPIO.BOARD. Pull-up resistors are enabled by software --> buttons must just connect to GND when pressed."""
 
-class RaspConfig:
-	led_pin = 15
-	source_switch_pin = 11 #if input must come from camera or from dataset
-	automatic_switch_pin = 16	#if this node must process picture in automatic (timer) or mannually
-	picture_button_pin = 13
-	using_camera = True
-	automatic_client = True
+		self.Value = startValue
+		self.button_pin = button_pin
+		self.led_pin = led_pin
+		#button config
+		GPIO.setmode(GPIO.BOARD)
+		GPIO.setup(button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+		GPIO.add_event_detect(button_pin, GPIO.FALLING, callback=self.button_callback, bouncetime=200)
+		#led config
+		GPIO.setup(led_pin, GPIO.OUT)
+		GPIO.output(led_pin, startValue)
 
-	#to be filled in runtime
+	def button_callback(self, channel):
+		self.Value = not self.Value
+		#print("Button at pin ", self.button_pin," pressed. Newvalue:", self.Value)
+		GPIO.output(self.led_pin, self.Value)
+		return
+
+
+
+
+
+class DeviceData:
+	led_pin = 33
+	picture_button_pin = 40
+
+	webcam_switch:CustomPushButton=None
+	automatic_switch:CustomPushButton=None
+
 	camera = None 
 	client = None
 	city = None
@@ -42,54 +64,29 @@ class RaspConfig:
 
 
 def setup_raspi():
-	RaspConfig.camera = cv2.VideoCapture(0)
+	print("setting raspberry pins..")
+	DeviceData.camera = cv2.VideoCapture(0)
 
 	GPIO.setmode(GPIO.BOARD)
-	GPIO.setup(RaspConfig.led_pin ,GPIO.OUT)
-	GPIO.setup(RaspConfig.picture_button_pin, GPIO.IN)
-	GPIO.setup(RaspConfig.source_switch_pin, GPIO.IN)
-	GPIO.setup(RaspConfig.automatic_switch_pin, GPIO.IN)
+	GPIO.setup(DeviceData.led_pin ,GPIO.OUT)
+	GPIO.setup(DeviceData.picture_button_pin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-	GPIO.add_event_detect(RaspConfig.picture_button_pin, GPIO.FALLING, callback=camera_button_callback, bouncetime=500)
-	GPIO.add_event_detect(RaspConfig.source_switch_pin, GPIO.BOTH, callback=source_switch_callback, bouncetime=500)
-	GPIO.add_event_detect(RaspConfig.automatic_switch_pin, GPIO.BOTH, callback=automatic_switch_callback, bouncetime=500)
+	DeviceData.webcam_switch = CustomPushButton(11,12,False)
+	DeviceData.automatic_switch = CustomPushButton(15,16,True)
 
-	source_switch_callback(None)
-	automatic_switch_callback(None)
+	GPIO.add_event_detect(DeviceData.picture_button_pin, GPIO.FALLING, callback=camera_button_callback, bouncetime=200)
 	return
 
-def start_camera_stream(): #different thread just to extrcat frames.
+def start_camera_stream(): #different thread just to extract frames.
 	while True:
-		if(RaspConfig.camera != None):
-			ret, frame = RaspConfig.camera.read()
+		if(DeviceData.camera is not None):
+			ret, frame = DeviceData.camera.read()
 			if(ret):
-				RaspConfig.last_frame = frame
+				DeviceData.last_frame = frame
 
-def source_switch_callback(channel):
-	pin_value = GPIO.input(RaspConfig.source_switch_pin)
-	if pin_value and not RaspConfig.using_camera:
-		print("-----Switched to webcam mode-----")
-		RaspConfig.using_camera = True
-
-	if not pin_value and RaspConfig.using_camera:
-		print("-----Switched to preloaded-picture mode-----")
-		RaspConfig.using_camera = False
-	return
-
-
-def automatic_switch_callback(channel):
-	pin_value = GPIO.input(RaspConfig.automatic_switch_pin)
-	if pin_value and not RaspConfig.automatic_client:
-		print("-----Switched to automatic-----")
-		RaspConfig.automatic_client = True
-
-	if not pin_value and RaspConfig.automatic_client:
-		print("-----Switched to manual-----")
-		RaspConfig.automatic_client = False
-	return
 
 def camera_button_callback(channel):
-	if RaspConfig.automatic_client:
+	if DeviceData.automatic_switch.Value:
 		return
 	else:
 		print("camera Button pressed!")
@@ -98,12 +95,10 @@ def camera_button_callback(channel):
 
 #read the switch and decide where to take from the picture (webcam/dataset).
 def get_picture():
-	if RaspConfig.using_camera:
-		#grabbed, pic = RaspConfig.camera.read()
-		pic = RaspConfig.last_frame
+	if DeviceData.webcam_switch.Value:
+		pic = DeviceData.last_frame
 		save_last_picture(pic)
 		pic = cv2.cvtColor(pic, cv2.COLOR_BGR2RGB)
-
 	else:
 		pic = get_picture_from_dataset()
 	return pic
@@ -117,9 +112,7 @@ def save_last_picture(picture):
 
 def get_picture_from_dataset():
 	parentDir = os.path.join(path_to_folder,"sky_pictures")
-	_, dirs, _ = next(os.walk(parentDir))
-	category = os.path.join(parentDir, random.choice(dirs))
-	pic = os.path.join(category,random.choice(os.listdir(category)))
+	pic = os.path.join(parentDir,random.choice(os.listdir(parentDir)))
 	img = cv2.imread(pic)
 
 	save_last_picture(img)
@@ -129,7 +122,7 @@ def get_picture_from_dataset():
 	return img
 
 def set_led_value(is_raining:bool):
-	GPIO.output(RaspConfig.led_pin, is_raining)
+	GPIO.output(DeviceData.led_pin, is_raining)
 	return
 
 def set_raining_value(is_raining :bool, city: str, client):
@@ -143,23 +136,23 @@ def set_raining_value(is_raining :bool, city: str, client):
 
 	if(rasp_build):
 		set_led_value(is_raining)
-	print("publishing: ", topic)
+	print("publishing: ", topic, time.asctime(time.localtime(time.time())))
 	client.publish(topic)
 
 
 def elaborate_weather():
-	if RaspConfig.client.is_connected():
+	if DeviceData.client.is_connected():
 		img = get_picture()
-		result = RaspConfig.model.evaluatePicture(img)
-		set_raining_value(result,RaspConfig.city,RaspConfig.client)
+		result = DeviceData.model.evaluatePicture(img)
+		set_raining_value(result,DeviceData.city,DeviceData.client)
 	else:
 		print("not connected. Impossible to send data.")
 	return
 
 def automatic_client():
-	if(RaspConfig.automatic_client and RaspConfig.camera != None):
+	if(DeviceData.automatic_switch is not None and DeviceData.automatic_switch.Value):
 		elaborate_weather()
-	threading.Timer(RaspConfig.timer, automatic_client).start()
+	threading.Timer(DeviceData.timer, automatic_client).start()
 
 
 def on_connect(client, userdata, flags, rc):
@@ -169,8 +162,8 @@ def on_connect(client, userdata, flags, rc):
 
 def signal_handler(sig, frame):
 
-	if RaspConfig.camera:
-		RaspConfig.camera.release()
+	if DeviceData.camera:
+		DeviceData.camera.release()
 
 	GPIO.cleanup()
 	sys.exit(0)
@@ -183,7 +176,7 @@ def main_core(argv):
 	print("loading model..")
 	model = torch.load(os.path.join(path_to_folder,"modello"))
 	model.eval()
-	RaspConfig.model = model
+	DeviceData.model = model
 	print("model loaded.")
 
 	print("starting mqtt client nowcaster..")
@@ -191,21 +184,24 @@ def main_core(argv):
 	f = open(argv)
 	config = json.load(f)
 
-	RaspConfig.city = config['City']
-	RaspConfig.timer = config['RoutinePeriod'] #in seconds
-	RaspConfig.ipBroker = config["IpBroker"]
-	print("timer: ", RaspConfig.timer)
+	DeviceData.city = config['City']
+	DeviceData.timer = config['RoutinePeriod'] #in seconds
+	DeviceData.ipBroker = config["IpBroker"]
+	print("timer: ", DeviceData.timer)
 
 	client = mqtt.Client()
-	RaspConfig.client = client
+	DeviceData.client = client
 	client.on_connect=on_connect
-	client.will_set("{}/nowcasting/dead/".format(RaspConfig.city))
+	client.will_set("{}/nowcasting/dead/".format(DeviceData.city))
 	
 
 	if rasp_build:
 		thread.start_new_thread(start_camera_stream, ())
 
 	automatic_client()
+	if(rasp_build):
+		setup_raspi()
+
 	set_connection()
 
 	signal.signal(signal.SIGINT, signal_handler)
@@ -214,18 +210,13 @@ def main_core(argv):
 
 def set_connection():
 	try:
-		client = RaspConfig.client
-		client.connect(RaspConfig.ipBroker, 1883, 60)
+		client = DeviceData.client
+		client.connect(DeviceData.ipBroker, 1883, 60)
 		client.loop_start() #start the loop
 	except:
-		print("Impossible to start a connection to ", RaspConfig.ipBroker,"; retrying in 5 seconds..")
+		print("Impossible to start a connection to ", DeviceData.ipBroker,"; retrying in 5 seconds..")
 		threading.Timer(5, set_connection).start()
 		return
-
-	if(rasp_build):
-		setup_raspi()
-
-
 	return
 
 

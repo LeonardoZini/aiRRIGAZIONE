@@ -4,5 +4,6 @@
 	"Code":"AA111",
 	"RoutinePeriod":2,
 	"TimeToWait":15,
-	"IpBroker":"localhost"
+	"IpBroker":"localhost",
+	"IrrigationTime":5
 }
