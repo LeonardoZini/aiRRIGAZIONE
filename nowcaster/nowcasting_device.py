@@ -13,6 +13,8 @@ import threading
 import signal
 import sys
 import _thread as thread  # using Python 3
+import api_module as api_w
+import schedule
 
 rasp_build=True #change if you are using pc client (not raspberry)
 if(rasp_build):
@@ -168,6 +170,16 @@ def signal_handler(sig, frame):
 	GPIO.cleanup()
 	sys.exit(0)
 
+
+
+
+
+def pending():
+	while True:
+		schedule.run_pending()
+		time.sleep(45)
+
+
 def main_core(argv):
 	print(argv)
 
@@ -194,6 +206,10 @@ def main_core(argv):
 	client.on_connect=on_connect
 	client.will_set("{}/nowcasting/dead/".format(DeviceData.city))
 	
+	# Pie non mi tirare dei cancheri ma per ora l'ho abbozzato così, sto pensando a qualcosa di intelligente
+	schedule.every().day.at("00:01").do(api_w.get_forecast_info, city=config["City"], m_client=client)
+	t_sched = threading.Thread(target=pending)
+    t_sched.start()
 
 	if rasp_build:
 		thread.start_new_thread(start_camera_stream, ())
@@ -206,7 +222,7 @@ def main_core(argv):
 
 	signal.signal(signal.SIGINT, signal_handler)
 	signal.pause()
-	
+	t_sched.join()
 
 def set_connection():
 	try:

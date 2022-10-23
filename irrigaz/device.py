@@ -47,6 +47,15 @@ class MyDevice(Device):
         super().__init__(city,zone,name,status)
         self._wait = False
         self._nowcaster = NowCaster()
+        self.lat = 0.0
+        self.lon = 0.0
+
+    def set_coordinates(self,lat:float, lon:float):
+        self.lat=lat
+        self.lon=lon
+
+    def get_coordinates(self):
+        return f"lat={self.lat}&lon={self.lon}"
 
     def change_wait(self, wait):
         self._wait = wait
@@ -91,7 +100,7 @@ class MQTTClient(mqtt.Client):
 
         
         #Pubblico add statement, comunico che il device è online
-        client.publish(self._my_dev.addStatement())
+        client.publish(self._my_dev.addStatement(), payload=self._my_dev.get_coordinates())
 
         #Check statement, chiedo quali altri dispositivi sono online
         client.publish("{}/check".format(self._my_dev._city))
