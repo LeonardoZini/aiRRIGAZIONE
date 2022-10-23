@@ -73,6 +73,8 @@ def setup_raspi():
 	DeviceData.webcam_switch = CustomPushButton(11,12,False)
 	DeviceData.automatic_switch = CustomPushButton(15,16,True)
 
+	global cameraButtonToggle
+	cameraButtonToggle = False
 	GPIO.add_event_detect(DeviceData.picture_button_pin, GPIO.FALLING, callback=camera_button_callback, bouncetime=200)
 	return
 
@@ -81,15 +83,18 @@ def start_camera_stream(): #different thread just to extract frames.
 		if(DeviceData.camera is not None):
 			ret, frame = DeviceData.camera.read()
 			if(ret):
-				DeviceData.last_frame = frame
+				DeviceData.last_frame = cv2.rotate(frame, cv2.ROTATE_180)
 
 
 def camera_button_callback(channel):
 	if DeviceData.automatic_switch.Value:
 		return
 	else:
-		print("camera Button pressed!")
-		elaborate_weather()
+		global cameraButtonToggle
+		if cameraButtonToggle:
+			print("camera Button pressed!")
+			elaborate_weather()
+		cameraButtonToggle = not cameraButtonToggle	#in order to resolve a mechanical problem :(
 
 
 #read the switch and decide where to take from the picture (webcam/dataset).

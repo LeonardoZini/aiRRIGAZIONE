@@ -81,6 +81,8 @@ def setup_raspi():
 	DeviceData.webcam_switch = CustomPushButton(11,12,False)
 	DeviceData.automatic_switch = CustomPushButton(15,16,True)
 
+	global cameraButtonToggle
+	cameraButtonToggle = False
 	GPIO.add_event_detect(DeviceData.picture_button_pin, GPIO.FALLING, callback=camera_button_callback, bouncetime=200)
 	return
 
@@ -89,15 +91,18 @@ def start_camera_stream(): #different thread just to extract frames.
 		if(DeviceData.camera is not None):
 			ret, frame = DeviceData.camera.read()
 			if(ret):
-				DeviceData.last_frame = frame
+				DeviceData.last_frame = cv2.rotate(frame, cv2.ROTATE_180)
 
 
 def camera_button_callback(channel):
 	if DeviceData.automatic_switch.Value:
 		return
 	else:
-		print("camera Button pressed!")
-		elaborate_picture()
+		global cameraButtonToggle
+		if cameraButtonToggle:
+			print("camera Button pressed!")
+			elaborate_picture()
+		cameraButtonToggle = not cameraButtonToggle	#in order to resolve a mechanical problem :(
 
 #read the switch and decide where to take from the picture (webcam/dataset).
 def get_picture():
@@ -149,7 +154,7 @@ def activate_irrigation():
 	
 
 def elaborate_picture():
-	if DeviceData.watering or (not DeviceData.sun) or DeviceData.noOthers:
+	if DeviceData.watering or (not DeviceData.sun) or (not DeviceData.noOthers):
 		return #if we are already irrigating, or there are not weather conditions, or someone else is using water
 
 	if DeviceData.client.is_connected():
@@ -163,20 +168,17 @@ def elaborate_picture():
         transforms.CenterCrop(input_size),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])])
-
-		#image = Image.open(pic)
 		x = data_transforms(img)
 		x.unsqueeze_(0)
-
 		y = DeviceData.model(x)
 		# il primo valore è per la classe nopeole, il secondo per people, vince il max
 		y = torch.argmax(y)
 		if y == 0:
 			#there is nobody,let's activate irrigation.
 			thread.start_new_thread(activate_irrigation, ())
-			#print("the park is free..")
-		#else:
-			#print("There is someone in the park..")
+			print("the park is free..")
+		else:
+			print("There is someone in the park..")
 	else:
 		print("not connected. Impossible to send data.")
 	return
@@ -244,7 +246,7 @@ def main_core(argv):
 
 if __name__ == '__main__':
 	if len(sys.argv) > 1:
-		argv=sys.argv[1]
+		argv= os.path.join(path_to_folder, sys.argv[1]) 
 	else:
 		argv= os.path.join(path_to_folder,"node_config.json")
 	
