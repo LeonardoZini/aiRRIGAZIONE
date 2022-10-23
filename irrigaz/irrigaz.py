@@ -196,10 +196,12 @@ def signal_handler(sig, frame):
 
 def f1(b:bool):
 	print(f"someone else is using water:{not b}")
+	set_led_value(DeviceData.network_led_pin, b)
 	DeviceData.noOthers = b
 
 def f2(b:bool):
 	print(f"There is sun:{b}")
+	set_led_value(DeviceData.sun_led_pin,b)
 	DeviceData.sun = b
 
 

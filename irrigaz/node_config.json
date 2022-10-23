@@ -5,5 +5,9 @@
 	"RoutinePeriod":5,
 	"TimeToWait":15,
 	"IpBroker":"localhost",
+	"coordinates": {
+		"lat": 44.643706,
+		"lon": 10.927194
+	},
 	"IrrigationTime":5
 }
