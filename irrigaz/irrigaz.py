@@ -16,7 +16,7 @@ import time
 
 
 
-rasp_build=True #change if you are using pc client (not raspberry)
+rasp_build=False #change if you are using pc client (not raspberry)
 if(rasp_build):
     import RPi.GPIO as GPIO
 
@@ -166,6 +166,9 @@ def setup_raspi():
     global rasp_configured
     rasp_configured=True
 
+    on_change_water_usage(DeviceData.noOthers)
+    on_change_weather(DeviceData.sun)
+
     return
 
 def on_new_auto_value(b:bool):
@@ -251,7 +254,7 @@ def try_to_irrigate(): #bloccante!
         print("There are not weather condition now.")
         return False
     if not DeviceData.noOthers:
-        print("Someone els is using water, impossible to start now.")
+        print("Someone else is using water, impossible to start now.")
         return False
 
     if DeviceData.client.is_connected():
@@ -290,12 +293,12 @@ def signal_handler(sig, frame):
         GPIO.cleanup()
     sys.exit(0)
 
-def f1(b:bool):
+def on_change_water_usage(b:bool):
     print(f"someone else is using water:{not b}")
     set_led_value(DeviceData.network_led_pin, b)
     DeviceData.noOthers = b
 
-def f2(b:bool):
+def on_change_weather(b:bool):
     print(f"There is sun:{b}")
     set_led_value(DeviceData.sun_led_pin,b)
     DeviceData.sun = b
@@ -313,7 +316,7 @@ def main_core(argv):
     print("timer: ", DeviceData.timer)
 
 
-    DeviceData.client = aimqtt.Core(f1,f2,config)	#here it will try to connect.
+    DeviceData.client = aimqtt.Core(on_change_water_usage, on_change_weather,config)	#here it will try to connect.
 
 
     #torch.set_num_threads(3) #setting 3 threads (out of 4)
@@ -329,6 +332,10 @@ def main_core(argv):
 
     if(rasp_build):
         setup_raspi()
+    else:
+        x = ScheduleNewIrrigationThread()
+        while(True):
+            time.sleep(1)
 
 
     signal.signal(signal.SIGINT, signal_handler)

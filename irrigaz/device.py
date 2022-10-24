@@ -208,7 +208,7 @@ class MQTTClient(mqtt.Client):
                 #Devo fare cosi per recuperare l'oggetto nella lista vero
                 if self._client_list[self._client_list.index(tmp)]._status == True:
                     self._queue-=1
-                    if self.queue == 0 : 
+                    if self._queue == 0 : 
                         self.callback_irr(True)
                     self.check_if_can_go()
                 self._client_list.remove(tmp)
