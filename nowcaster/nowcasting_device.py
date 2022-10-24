@@ -20,8 +20,10 @@ rasp_build=True #change if you are using pc client (not raspberry)
 if(rasp_build):
 	import RPi.GPIO as GPIO
 
-path_to_folder= os.path.join("/","home","pi","Desktop","airrigazione")
-#path_to_folder= os.path.join(".") #just for testing
+if rasp_build:
+	path_to_folder= os.path.join("/","home","pi","Desktop","airrigazione")
+else:
+	path_to_folder= os.path.join(".") #just for testing
 
 
 class CustomPushButton:

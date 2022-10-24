@@ -19,9 +19,12 @@ rasp_build=False #change if you are using pc client (not raspberry)
 if(rasp_build):
 	import RPi.GPIO as GPIO
 
+if rasp_build:
+	path_to_folder= os.path.join("/","home","pi","Desktop","airrigazione")
+else:
+	path_to_folder= os.path.join("irrigaz") #just for testing
 
-#path_to_folder= os.path.join("/","home","pi","Desktop","airrigazione")
-path_to_folder= os.path.join("irrigaz") #just for testing
+rasp_configured=False
 
 
 class CustomPushButton:
@@ -84,6 +87,10 @@ def setup_raspi():
 	global cameraButtonToggle
 	cameraButtonToggle = False
 	GPIO.add_event_detect(DeviceData.picture_button_pin, GPIO.FALLING, callback=camera_button_callback, bouncetime=200)
+
+	global rasp_configured
+	rasp_configured=True
+
 	return
 
 def start_camera_stream(): #different thread just to extract frames.
@@ -133,7 +140,7 @@ def get_picture_from_dataset():
 	return img
 
 def set_led_value(pin:int, value:bool):
-	if rasp_build:
+	if rasp_build and rasp_configured:
 		GPIO.output(pin, value)
 	return
 
@@ -246,7 +253,7 @@ def main_core(argv):
 
 if __name__ == '__main__':
 	if len(sys.argv) > 1:
-		argv= os.path.join(path_to_folder, sys.argv[1]) 
+		argv= sys.argv[1]
 	else:
 		argv= os.path.join(path_to_folder,"node_config.json")
 	
