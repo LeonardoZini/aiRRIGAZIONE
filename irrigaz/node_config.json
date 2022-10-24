@@ -3,7 +3,7 @@
 	"Park":"viadavia",
 	"Code":"AA111",
 	"RoutinePeriod":5,
-	"TimeToWait":15,
+	"TimeToWait":5,
 	"IpBroker":"localhost",
 	"coordinates": {
 		"lat": 44.643706,
