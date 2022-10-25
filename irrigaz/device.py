@@ -189,7 +189,7 @@ class MQTTClient(mqtt.Client):
                 self._my_dev._nowcaster.status = False # Nowcaster offline
 
                 self._my_dev.sun=True   # Se il nowcaster non va consideriamo che ci sia il sole, così nel dubbio annaffiamo
-
+                self.callback_now(True)
                 self.logger.warning("nowcasting device is offline") # Non viene notificato quando torna online, ma viene rilevato e funziona
 
         elif topic[1] == 'add':
@@ -218,33 +218,3 @@ class MQTTClient(mqtt.Client):
         elif topic[1]=='check':
             client.publish(self._my_dev.addStatement())
 
-
-
-
-'''
-def main_core(argv):
-
-    f = open(argv)
-    config = json.load(f)
-
-
-    this_device = MyDevice(config['City'],config['Park'],config['Code'])
-    client = MQTTClient(this_device)
-
-    client.will_set(this_device._city+"/dead/"+this_device._zone+"/"+this_device._name)
-    client.connect(config["IpBroker"], 1883, 60)
-
-    logger = logging.getLogger()
-
-    logger.setLevel(logging.INFO)
-
-    logging.info(f"device info: {this_device}")
-    logging.info("start scheduler..")
-
-
-    logging.info("start client loop_forever")
-    t_client =threading.Thread(target=client.loop_forever)
-    t_client.start()
-    t_client.join()
-
-'''
