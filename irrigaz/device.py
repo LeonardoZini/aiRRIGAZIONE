@@ -216,5 +216,5 @@ class MQTTClient(mqtt.Client):
             self.logger.info(f"will statement, {tmp._zone}/{tmp._name} is dead")
 
         elif topic[1]=='check':
-            client.publish(self._my_dev.addStatement())
+            client.publish(self._my_dev.addStatement(), payload=self._my_dev.get_coordinates())
 
