@@ -4,7 +4,7 @@ import datetime
 import osmnx as ox
 import paho.mqtt.client as mqtt
 
-def get_forecast_info(city:string, m_client=mqtt.Client):
+def get_forecast_info(city:str, m_client=mqtt.Client):
 	t = ox.geocode_to_gdf({'city':city})
 	today = datetime.datetime.now().strftime("%Y-%m-%d")
 

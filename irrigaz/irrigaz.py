@@ -16,7 +16,7 @@ import time
 
 
 
-rasp_build=True #change if you are using pc client (not raspberry)
+rasp_build=False #change if you are using pc client (not raspberry)
 if(rasp_build):
     import RPi.GPIO as GPIO
 

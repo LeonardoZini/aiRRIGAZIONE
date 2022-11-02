@@ -97,7 +97,7 @@ class MQTTClient(mqtt.Client):
 
     def on_connect(self, client, userdata, flags, rc):
         self.logger.info("Connected with result code " + str(rc))
-
+        self._client_list.clear()
         
         #Pubblico add statement, comunico che il device è online
         client.publish(self._my_dev.addStatement(), payload=self._my_dev.get_coordinates())
