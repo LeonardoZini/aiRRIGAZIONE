@@ -2,8 +2,8 @@
 	"City":"modena",
 	"Park":"viadavia",
 	"Code":"PC2007",
-	"RoutinePeriod":2,
-	"TimeToWait":15,
+	"RoutinePeriod":6,
+	"TimeToWait":1,
 	"IpBroker":"localhost",
 	"coordinates": {
 		"lat": 44.643706,

@@ -2,7 +2,7 @@
 	"City":"modena",
 	"Park":"viadavia",
 	"Code":"AA111",
-	"RoutinePeriod":7,
+	"RoutinePeriod":5,
 	"TimeToWait":2,
 	"IpBroker":"localhost",
 	"coordinates": {
