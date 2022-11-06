@@ -128,6 +128,7 @@ class MQTTClient(mqtt.Client):
 			if park_id not in self._clients_dict:
 				#Device non registrato nella lista
 				self.logger.warning("watering statement from a device not registered")
+				return
 			other = self._clients_dict[park_id]
 			
 			if topic[4] == 'start':
@@ -148,7 +149,7 @@ class MQTTClient(mqtt.Client):
 		elif topic[1] == 'nowcasting':
 
 			self.logger.info(f"nowcasting statement (0 sun, 1 rain, dead :( ): {topic[2]}")
-			if topic[2] != 'dead':
+			if topic[2] == '0' or topic[2] == '1':
 				lvl = topic[2]
 
 				# Setto il valore del cielo che ricevo nell'istanza nowcaster del mio device
@@ -170,7 +171,7 @@ class MQTTClient(mqtt.Client):
 				# così nella parte decisionale lo torno a prendere in considerazione
 				if self._my_dev._nowcaster.status == False:
 					self._my_dev._nowcaster.status = True 
-			else:
+			elif topic [2] == 'dead':
 				self._my_dev._nowcaster.status = False # Nowcaster offline
 
 				self._my_dev.sun=True   # Se il nowcaster non va consideriamo che ci sia il sole, così nel dubbio annaffiamo
